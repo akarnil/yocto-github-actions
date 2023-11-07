@@ -1,0 +1,39 @@
+name: Bitbake image
+on:
+  push:
+    branches: [ "master", "kirkstone" ] #adjust as needed
+  pull_request:
+    branches: [ "master", "kirkstone" ] #adjust as needed
+
+jobs:
+  spawn-build-container:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: setup clean build
+        run: |
+          mkdir out && cd out
+          ./../.github/workflows/setup_kirkstone.sh 
+
+      - name: bake
+        run: |
+          cd out
+          source poky/oe-init-build-env
+          bitbake core-image-minimal
+        shell: bash
+
+    #   - name: run qemu
+    #     run: |
+    #       cd out
+    #       source poky/oe-init-build-env
+    #       runqemu qemux86-64 slirp nographic
+    #     shell: bash
+    
+      - uses: actions/upload-artifact@v2
+        with:
+            name: sdcard
+            path: /mnt/resource/kirkstone/tmp/deploy/images/qemux86-64/*.rootfs.tar.bz2
+
+      - run: rm -rf out # clean
